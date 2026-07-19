@@ -70,14 +70,38 @@ class BotToFragmentPluginTest(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(metadata["name"].isidentifier())
         self.assertEqual(metadata["repo"], "https://github.com/dailin3/bot-to-fragment")
 
-    async def test_initialize_registers_both_collector_routes(self):
+    async def test_initialize_registers_collector_routes(self):
         self.plugin.context = MagicMock()
 
         await self.plugin.initialize()
 
         calls = self.plugin.context.register_web_api.call_args_list
-        self.assertEqual([call.args[0] for call in calls], ["/fragments", "/fragments/delete"])
-        self.assertEqual([call.args[2] for call in calls], [["GET"], ["POST"]])
+        self.assertEqual(
+            [call.args[0] for call in calls],
+            ["/fragments", "/fragments/delete", "/fragments/health"],
+        )
+        self.assertEqual(
+            [call.args[2] for call in calls],
+            [["GET"], ["POST"], ["GET"]],
+        )
+
+    async def test_health_returns_healthy_when_fragment_directory_is_available(self):
+        async with self.app.app_context():
+            response = await self.plugin._health()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(await response.get_json(), {"healthy": True})
+
+    async def test_health_returns_service_unavailable_when_fragment_directory_is_missing(
+        self,
+    ):
+        plugin_module.FRAG_DIR = str(self.fragments / "missing")
+
+        async with self.app.app_context():
+            response, status = await self.plugin._health()
+
+        self.assertEqual(status, 503)
+        self.assertEqual(await response.get_json(), {"healthy": False})
 
     async def test_message_is_written_as_a_fragment(self):
         event = MagicMock()

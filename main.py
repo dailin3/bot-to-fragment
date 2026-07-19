@@ -6,6 +6,7 @@ bot-to-fragment: 将 QQ 消息写入碎片文件，并通过 Web API 暴露给 F
 - on_message: QQ 消息 -> fragments/YYYY-MM-DD-HHMMSS-######.md
 - GET /api/plug/fragments -> 返回所有碎片文件列表
 - POST /api/plug/fragments/delete -> 物理删除指定碎片文件
+- GET /api/plug/fragments/health -> 返回碎片目录健康状态
 """
 
 import os
@@ -42,11 +43,25 @@ class BotToFragmentPlugin(Star):
             ["POST"],
             "Delete a fragment file by id",
         )
+        self.context.register_web_api(
+            "/fragments/health",
+            self._health,
+            ["GET"],
+            "Check fragment directory availability",
+        )
 
         logger.info("bot-to-fragment 插件已加载")
 
     async def terminate(self):
         logger.info("bot-to-fragment 插件已卸载")
+
+    async def _health(self):
+        """GET /api/plug/fragments/health: 返回碎片目录健康状态。"""
+        healthy = os.path.isdir(FRAG_DIR) and os.access(
+            FRAG_DIR, os.R_OK | os.W_OK | os.X_OK
+        )
+        response = jsonify({"healthy": healthy})
+        return response if healthy else (response, 503)
 
     @filter.event_message_type(filter.EventMessageType.ALL)
     async def on_message(self, event: AstrMessageEvent):
