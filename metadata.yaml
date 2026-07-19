@@ -1,0 +1,6 @@
+ name: bot-to-fragment
+ display_name: Bot to Fragment
+ desc: 将 QQ 消息写入碎片文件，并通过 Web API 暴露 Fragment Collector 接口
+ version: v1.0.0
+ author: Dailin3
+ repo: https://github.com/dailin3/bot-to-fragment
