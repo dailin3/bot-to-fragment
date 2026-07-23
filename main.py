@@ -82,7 +82,8 @@ class BotToFragmentPlugin(Star):
                 fragment_file.write(f"- {time_str} {message_str}\n")
 
             logger.debug(f"已写碎片: {frag_path}")
-            yield event.plain_result("已保存")
+            event.stop_event()
+            yield event.plain_result("已收到")
 
         except Exception as exc:
             logger.error(f"on_message 处理出错: {exc}")

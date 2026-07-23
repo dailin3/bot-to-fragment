@@ -106,12 +106,14 @@ class BotToFragmentPluginTest(unittest.IsolatedAsyncioTestCase):
     async def test_message_is_written_as_a_fragment(self):
         event = MagicMock()
         event.message_str = "remember this"
-        event.plain_result.return_value = "saved"
+        event.plain_result.return_value = "acknowledged"
 
         results = [result async for result in self.plugin.on_message(event)]
 
         fragment_files = list(self.fragments.glob("*.md"))
-        self.assertEqual(results, ["saved"])
+        event.stop_event.assert_called_once_with()
+        event.plain_result.assert_called_once_with("已收到")
+        self.assertEqual(results, ["acknowledged"])
         self.assertEqual(len(fragment_files), 1)
         self.assertRegex(
             fragment_files[0].stem,
